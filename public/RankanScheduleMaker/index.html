@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rankan Schedule Maker</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'ChikaraDzuyoku';
+      src: url('./851CHIKARA-DZUYOKU_kanaA_004.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    :root {
+      /* ▼▼ 画像に合わせた座標設定（基準は 1920x1080） ▼▼ */
+      
+      /* 最初の行の上からの位置（Y座標） */
+      --start-y: 196px;
+      /* 各行の縦の間隔（ピッチ） */
+      --step-y: 129px;
+
+      /* 「月」の数字の右端位置（X座標） */
+      --month-x: 165px;
+      /* 「日」の数字の右端位置（X座標） */
+      --day-x: 265px;
+      /* 「曜日」の中央位置（X座標） */
+      --weekday-x: 368px;
+      /* 「時間」の右端位置（X座標） */
+      --time-x: 485px;
+      /* 「備考」の左端位置（X座標） */
+      --memo-x: 580px;
+
+      /* 文字サイズと色 */
+      --font-size-num: 38px;  /* 数字のサイズ */
+      --font-size-memo: 36px; /* 備考のサイズ */
+      --text-color: #ffffff;  /* 基本の文字色 */
+    }
+
+    body, html {
+      margin: 0; padding: 0;
+      font-family: 'Noto Sans JP', sans-serif;
+      background-color: #1e1e1e;
+      color: #fff;
+      height: 100vh;
+    }
+    #app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 左側の入力エリア */
+    .control-panel {
+      width: 450px;
+      background: #2b2b2b;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      border-right: 1px solid #444;
+    }
+    .control-panel h2 { margin-top: 0; font-size: 1.2rem; color: #4ade80; border-bottom: 1px solid #555; padding-bottom: 10px;}
+    .day-row-input { background: #333; padding: 10px; margin-bottom: 10px; border-radius: 6px; }
+    .flex-inputs { display: flex; gap: 5px; margin-bottom: 5px; }
+    .flex-inputs input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #555; background: #1e1e1e; color: #fff; border-radius: 4px; }
+    
+    button { background: #4ade80; color: #000; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+    button:hover { background: #22c55e; }
+    hr { border: none; border-top: 1px dashed #555; margin: 20px 0; }
+    .save-btns { display: flex; gap: 10px; }
+    .save-btns button { flex: 1; }
+
+    /* 右側のプレビューエリア */
+    .preview-container {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: #121212;
+      overflow: auto;
+    }
+
+    /* キャンバス（画像サイズ 1920x1080 基準のコンテナ） */
+    .schedule-canvas {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      background-image: url('./backglf.png');
+      background-size: 1920px 1080px; /* 固定サイズで描画 */
+      background-repeat: no-repeat;
+      /* box-shadow: 0 10px 30px rgba(0,0,0,0.5); 画像化時の黒い影・帯の原因になるため無効化 */
+      
+      /* プレビュー時に画面に収まるように縮小（出力時は実寸になります） */
+      transform-origin: top left;
+      /* Vue側で scale を計算して適用します */
+    }
+
+    /* 文字をのせるレイヤーの共通設定 */
+    .text-element {
+      position: absolute;
+      color: var(--text-color);
+      font-weight: 900;
+      white-space: nowrap;
+      font-family: 'ChikaraDzuyoku', 'Noto Sans JP', sans-serif;
+    }
+
+    /* 個別の配置設定 */
+    .val-month {
+      left: var(--month-x);
+      transform: translateX(-100%); /* 右端を揃える */
+      font-size: var(--font-size-num);
+      margin-top: 1px; /* 月を1px下げる */
+    }
+    .val-day {
+      left: var(--day-x);
+      transform: translateX(-100%); /* 右端を揃える */
+      font-size: var(--font-size-num);
+      margin-top: 1px; /* 日付を1px下げる */
+    }
+    .val-weekday {
+      left: var(--weekday-x);
+      transform: translateX(-50%); /* 中央揃え */
+      font-size: var(--font-size-num); /* 日付とフォントサイズを合わせて縦軸（高さ）を揃える */
+      margin-top: 2px; /* 曜日を2px下げる */
+    }
+    .val-time {
+      left: var(--time-x);
+      transform: translateX(-100%); /* 右端を揃える */
+      font-size: var(--font-size-num);
+      margin-top: 2px; /* 時間を2px下げる */
+    }
+    .val-memo {
+      left: var(--memo-x);
+      font-size: var(--font-size-memo);
+      margin-top: 2px; /* 備考を2px下げる */
+    }
+
+    /* CSSでループ的な配置を行うためのハック (calc使用) */
+    .row-0 { top: calc(var(--start-y) + (var(--step-y) * 0)); }
+    .row-1 { top: calc(var(--start-y) + (var(--step-y) * 1)); }
+    .row-2 { top: calc(var(--start-y) + (var(--step-y) * 2)); }
+    .row-3 { top: calc(var(--start-y) + (var(--step-y) * 3)); }
+    .row-4 { top: calc(var(--start-y) + (var(--step-y) * 4)); }
+    .row-5 { top: calc(var(--start-y) + (var(--step-y) * 5)); }
+    .row-6 { top: calc(var(--start-y) + (var(--step-y) * 6)); }
+
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- 左側の操作パネル -->
+  <div class="control-panel">
+    <h2>予定の入力 (1週間分)</h2>
+    <div v-for="(day, index) in schedule" :key="index" class="day-row-input">
+      <div style="font-size:0.9rem; font-weight:bold; margin-bottom:5px;">{{ index + 1 }}日目</div>
+      <div class="flex-inputs">
+        <input type="text" v-model="day.month" placeholder="月(例: 12)">
+        <input type="text" v-model="day.day" placeholder="日(例: 8)">
+        <input type="text" v-model="day.weekday" placeholder="曜日(例: 月)">
+      </div>
+      <div class="flex-inputs">
+        <input type="text" v-model="day.time" placeholder="時間(例: 21:00)">
+        <input type="text" v-model="day.memo" placeholder="備考(例: 歌枠)">
+      </div>
+    </div>
+
+    <hr>
+    <h2>保存と書き出し</h2>
+    <div class="save-btns" style="margin-bottom: 10px;">
+      <button @click="saveData" style="background:#0ea5e9; color:#fff;">💾 入力内容を保存</button>
+      <button @click="triggerLoadData" style="background:#f97316; color:#fff;">📂 データを読込</button>
+      <input type="file" id="dataInput" @change="loadData" style="display:none" accept=".json">
+    </div>
+    <button @click="downloadImage" style="padding:15px; font-size:1.1rem; background:#fbbf24;">🖼 画像として保存 (.png)</button>
+    <br><br>
+    <p style="font-size:0.8rem; color:#aaa;">※文字の位置が画像とずれている場合は、index.html上部のCSS（--month-x 等の数値）を調整してください。</p>
+  </div>
+
+  <!-- 右側のプレビューエリア -->
+  <div class="preview-container" ref="previewContainer">
+    <!-- 縮小表示用のラッパー -->
+    <div :style="{ width: (1920 * scale) + 'px', height: (1080 * scale) + 'px' }">
+      
+      <div id="schedule-capture" class="schedule-canvas" :style="{ transform: `scale(${scale})` }">
+        
+        <!-- 各行のデータ出力 -->
+        <template v-for="(item, index) in schedule" :key="index">
+          <div v-if="item.month" class="text-element val-month" :class="'row-' + index">{{ item.month }}</div>
+          <div v-if="item.day" class="text-element val-day" :class="'row-' + index">{{ item.day }}</div>
+          <div v-if="item.weekday" class="text-element val-weekday" :class="'row-' + index">{{ item.weekday }}</div>
+          <div v-if="item.time" class="text-element val-time" :class="'row-' + index">{{ item.time }}</div>
+          <div v-if="item.memo" class="text-element val-memo" :class="'row-' + index">{{ item.memo }}</div>
+        </template>
+
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<script>
+  const { createApp } = Vue;
+
+  createApp({
+    data() {
+      return {
+        // 初期データ
+        schedule: Array.from({ length: 7 }, () => ({
+          month: '', day: '', weekday: '', time: '', memo: ''
+        })),
+        scale: 0.5 // プレビュー時の縮小率（画面サイズに合わせて後で計算）
+      }
+    },
+    mounted() {
+      // ウィンドウサイズに合わせてプレビューを縮小表示
+      this.calculateScale();
+      window.addEventListener('resize', this.calculateScale);
+    },
+    beforeUnmount() {
+      window.removeEventListener('resize', this.calculateScale);
+    },
+    methods: {
+      calculateScale() {
+        const container = this.$refs.previewContainer;
+        if (!container) return;
+        // コンテナの幅に対して、キャンバス(1920px)が収まるように縮小
+        const availableWidth = container.clientWidth - 40; // padding分引く
+        const availableHeight = container.clientHeight - 40;
+        
+        // 横幅基準のスケールと縦幅基準のスケールを比較して小さい方を採用
+        const scaleW = availableWidth / 1920;
+        const scaleH = availableHeight / 1080;
+        this.scale = Math.min(scaleW, scaleH, 1.0); // 最大1.0倍
+      },
+      
+      downloadImage() {
+        const element = document.getElementById('schedule-capture');
+        
+        // 一時的にスケールを1.0（等倍）に戻して高画質でレンダリング
+        const currentScale = this.scale;
+        this.scale = 1.0;
+        
+        // VueのDOM更新を待つ
+        this.$nextTick(() => {
+          // 画像化の瞬間にスクロールがずれて黒い帯が入るのを防ぐ設定
+          window.scrollTo(0, 0);
+
+          html2canvas(element, { 
+            scale: 1, 
+            useCORS: true,
+            backgroundColor: null, // 背景透過
+            width: 1920,
+            height: 1080,
+            scrollY: 0,
+            scrollX: 0
+          }).then(canvas => {
+            let link = document.createElement('a');
+            link.download = `配信予定表.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+            // スケールを元に戻す
+            this.scale = currentScale;
+          });
+        });
+      },
+
+      saveData() {
+        const data = { schedule: this.schedule };
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        let link = document.createElement('a');
+        link.download = `配信予定表セーブデータ.json`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      },
+
+      triggerLoadData() {
+        document.getElementById('dataInput').click();
+      },
+      
+      loadData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target.result);
+            if(data && data.schedule) {
+              this.schedule = data.schedule;
+              alert("入力データの読み込みが完了しました！");
+            }
+          } catch (err) {
+            alert("ファイルの読み込みに失敗しました。対応していないファイルです。");
+          }
+        };
+        reader.readAsText(file);
+        event.target.value = ''; // Reset input
+      }
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>
