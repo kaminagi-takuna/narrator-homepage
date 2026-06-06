@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import VoiceCheck from './VoiceCheck.jsx'
 import Schedule from './Schedule.jsx'
-import VoiceRPGPreview from './VoiceRPGPreview.jsx'
 
 
 const TweetEmbed = ({ tweetId }) => {
@@ -428,28 +426,17 @@ function App() {
               </ul>
             </div>
 
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', background: 'rgba(30, 41, 59, 0.4)', padding: '1rem', borderRadius: '12px' }}>
-              <iframe
-                id="JotFormIFrame-253502863799066"
-                title="お問い合わせフォーム"
-                onLoad={() => window.parent.scrollTo(0,0)}
-                allowtransparency="true"
-                allowFullScreen={true}
-                allow="geolocation; microphone; camera"
-                src="https://form.jotform.com/253502863799066"
-                frameBorder="0"
-                style={{ minWidth: '100%', maxWidth: '100%', height: '800px', border: 'none', overflowY: 'auto' }}
-                scrolling="yes"
-              ></iframe>
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'rgba(30, 41, 59, 0.4)', padding: '4rem 2rem', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+              <p style={{ color: 'var(--accent)', fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '1rem' }}>✉ メールフォーム作成中</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', textAlign: 'center', lineHeight: '1.6' }}>
+                現在、新しいお問い合わせ用のフォームを準備しております。<br />
+                準備が整い次第、こちらにフォームが挿入されますので、しばらくお待ちください。
+              </p>
             </div>
           </div>
         );
-      case 'voicecheck':
-        return <VoiceCheck />;
       case 'schedule':
         return <Schedule />;
-      case 'rpg-test':
-        return <VoiceRPGPreview />;
       default:
         return <div>選択してください。</div>;
     }
@@ -530,9 +517,6 @@ function App() {
             <span>依頼詳細</span>
           </li>
           <li className={activeTab === 'schedule' ? 'active' : ''} onClick={() => handleTabChange('schedule')}>スケジュール</li>
-          <li className={activeTab === 'voicecheck' ? 'active' : ''} onClick={() => handleTabChange('voicecheck')}>
-            <span>発声状態チェック</span>
-          </li>
           <li className={activeTab === 'twitter' ? 'active' : ''} onClick={() => handleTabChange('twitter')}>
             <span style={{ fontFamily: 'var(--font-en)' }}>Twitter</span>
             <a href="https://x.com/Voice_Tac" target="_blank" rel="noopener noreferrer" className="external-link" onClick={(e) => e.stopPropagation()} title="別窓で開く">↗</a>
@@ -541,9 +525,8 @@ function App() {
             <span style={{ fontFamily: 'var(--font-en)' }}>note</span>
             <a href="https://note.com/voice_tn_nagi" target="_blank" rel="noopener noreferrer" className="external-link" onClick={(e) => e.stopPropagation()} title="別窓で開く">↗</a>
           </li>
-          <li className={activeTab === 'contact' ? 'active' : ''} onClick={() => handleTabChange('contact')}>メールフォーム</li>
+          <li className={activeTab === 'contact' ? 'active' : ''} onClick={() => handleTabChange('contact')}>メールフォーム [作成中]</li>
           <li onClick={() => window.open('/gift-tracker.html', '_blank')} style={{ color: 'var(--accent)', fontWeight: 'bold' }}>🎁 返礼品管理</li>
-          <li className={activeTab === 'rpg-test' ? 'active' : ''} onClick={() => handleTabChange('rpg-test')} style={{ opacity: 0.3, fontSize: '0.7rem', marginTop: '2rem' }}>[開発中] RPGテスト</li>
         </ul>
       </nav>
       <main className="content-area">
