@@ -517,16 +517,13 @@ function App() {
             <span>依頼詳細</span>
           </li>
           <li className={activeTab === 'schedule' ? 'active' : ''} onClick={() => handleTabChange('schedule')}>スケジュール</li>
-          <li className={activeTab === 'twitter' ? 'active' : ''} onClick={() => handleTabChange('twitter')}>
+          <li style={{ cursor: 'default', opacity: 0.5 }}>
             <span style={{ fontFamily: 'var(--font-en)' }}>Twitter</span>
-            <a href="https://x.com/Voice_Tac" target="_blank" rel="noopener noreferrer" className="external-link" onClick={(e) => e.stopPropagation()} title="別窓で開く">↗</a>
           </li>
-          <li className={activeTab === 'note' ? 'active' : ''} onClick={() => handleTabChange('note')}>
+          <li style={{ cursor: 'default', opacity: 0.5 }}>
             <span style={{ fontFamily: 'var(--font-en)' }}>note</span>
-            <a href="https://note.com/voice_tn_nagi" target="_blank" rel="noopener noreferrer" className="external-link" onClick={(e) => e.stopPropagation()} title="別窓で開く">↗</a>
           </li>
           <li className={activeTab === 'contact' ? 'active' : ''} onClick={() => handleTabChange('contact')}>メールフォーム [作成中]</li>
-          <li onClick={() => window.open('/gift-tracker.html', '_blank')} style={{ color: 'var(--accent)', fontWeight: 'bold' }}>🎁 返礼品管理</li>
         </ul>
       </nav>
       <main className="content-area">
